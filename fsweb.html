@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>FarmiSpeakAI</title>
+<style>
+body, html { margin: 0; padding: 0; font-family: 'Arial', sans-serif; height: 100%; overflow: hidden; }
+.screen { display: none; height: 100%; justify-content: center; align-items: center; flex-direction: column; text-align: center; padding: 20px; }
+#startScreen { display: flex; flex-direction: column; background: linear-gradient(to right, #56ab2f, #a8e063); color: white; }
+#startScreen h1 { font-size: 3em; margin-bottom: 20px; animation: titleSlide 2s ease forwards; }
+@keyframes titleSlide { 0% { transform: translateY(-50px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+#languageScreen { display: none; flex-direction: column; justify-content: center; align-items: center; background: #fff3e0; height: 100%; text-align: center; }
+.lang-btn { padding: 15px 25px; font-size: 18px; margin: 10px; border-radius: 10px; border: none; background: #4caf50; color: white; cursor: pointer; transition: 0.3s; }
+.lang-btn:hover { transform: scale(1.05); }
+#farmerInfo { display: none; background: #e0f7fa; flex-direction: column; justify-content: center; align-items: center; text-align: center; height: 100%; }
+.input-container { margin: 10px 0; display: flex; align-items: center; justify-content: center; }
+input { padding: 10px; margin-right: 10px; width: 250px; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; }
+.mic-btn { position: relative; background: #4caf50; border: none; border-radius: 50%; padding: 20px; cursor: pointer; color: white; font-size: 22px; transition: transform 0.3s, box-shadow 0.3s; }
+.mic-btn.listening { animation: micBlink 0.6s infinite alternate; }
+@keyframes micBlink { 0% { box-shadow: 0 0 5px #4caf50; transform: scale(1); } 50% { box-shadow: 0 0 20px #4caf50; transform: scale(1.1); } 100% { box-shadow: 0 0 5px #4caf50; transform: scale(1); } }
+button.submit-btn { padding: 12px 25px; font-size: 16px; border: none; border-radius: 10px; background: #4caf50; color: white; cursor: pointer; transition: 0.3s; margin-top: 20px; }
+button.submit-btn:hover { transform: scale(1.05); }
+#dashboard { display: none; padding: 50px 20px; background: #e0f7fa; min-height: 100vh; justify-content: center; align-items: flex-start; display: grid; grid-template-columns: repeat(2, 200px); grid-gap: 20px; }
+.card { background: #ffffff; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); padding: 20px; text-align: center; cursor: pointer; transition: transform 0.2s; }
+.card:hover { transform: scale(1.05); }
+.emoji { font-size: 50px; margin-bottom: 10px; }
+.title { font-size: 18px; font-weight: bold; margin-bottom: 10px; }
+.value { font-size: 16px; color: #555; }
+.details { display: none; margin-top: 10px; font-size: 14px; color: #00796b; }
+#enableVoiceBtn { position: fixed; bottom: 20px; right: 20px; padding: 12px 20px; background:#4caf50; border:none; color:white; border-radius:10px; font-size:16px; z-index: 9999; }
+.back-btn {
+    margin-top: 15px;
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    background: #f44336;
+    color: white;
+    cursor: pointer;
+    transition: 0.3s;
+}
+.back-btn:hover {
+    transform: scale(1.05);
+}
+</style>
+</head>
+<body>
+
+<!-- START SCREEN -->
+<div class="screen" id="startScreen">
+    <h1>🌾 FarmiSpeakAI 🌱</h1>
+</div>
+
+<!-- LANGUAGE SCREEN -->
+<div class="screen" id="languageScreen">
+    <h2>Select Your Language</h2>
+    <p id="langInstruction">
+        మీకు తెలుగు భాషలో కావాలి అంటే, ఒక్కటి నొక్కండి.<br>
+        अगर आप हिंदी में चाहते हैं तो, दो दबाएँ।<br>
+        If you want English, press 3.
+    </p>
+    <div>
+        <button class="lang-btn" onclick="selectLanguage('Telugu')">1</button>
+        <button class="lang-btn" onclick="selectLanguage('Hindi')">2</button>
+        <button class="lang-btn" onclick="selectLanguage('English')">3</button>
+    </div>
+    <button class="back-btn" onclick="goBack('startScreen')">⬅ Back</button>
+</div>
+
+<!-- FARMER INFO SCREEN -->
+<div class="screen" id="farmerInfo">
+    <h1 id="farmerWelcome">Welcome Farmer! 🌾</h1>
+    <p id="farmerInstruction">Press mic and speak your details:</p>
+
+    <div class="input-container">
+        <input type="text" id="farmerName" placeholder="Your Name" readonly>
+        <button class="mic-btn" id="micName" onclick="simulateVoice('farmerName')">🎤</button>
+    </div>
+
+    <div class="input-container">
+        <input type="text" id="farmLocation" placeholder="Farm Location" readonly>
+        <button class="mic-btn" id="micLocation" onclick="simulateVoice('farmLocation')">🎤</button>
+    </div>
+
+    <button class="submit-btn" onclick="submitFarmerInfo()">Continue</button>
+    <button class="back-btn" onclick="goBack('languageScreen')">⬅ Back</button>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+    <button class="back-btn" onclick="goBack('farmerInfo')">⬅ Back</button>
+
+    <div class="card" onclick="toggleDetails(this)">
+        <div class="emoji">💧</div>
+        <div class="title" id="title-moisture">Soil Moisture</div>
+        <div class="value" id="moisture">75%</div>
+        <div class="details" id="moistureDetails">Soil is wet, no need to water 🌱</div>
+    </div>
+
+    <div class="card" onclick="toggleDetails(this)">
+        <div class="emoji">🌡</div>
+        <div class="title" id="title-temp">Temperature</div>
+        <div class="value" id="temperature">32°C</div>
+        <div class="details" id="tempDetails">High temperature! Consider shading crops ☀</div>
+    </div>
+
+    <div class="card" onclick="toggleDetails(this)">
+        <div class="emoji">⚗</div>
+        <div class="title" id="title-ph">Soil pH</div>
+        <div class="value" id="ph">6.5</div>
+        <div class="details" id="phDetails">pH is ideal. Maintain current soil treatment 🌿</div>
+    </div>
+
+    <div class="card" onclick="toggleDetails(this)">
+        <div class="emoji">💡</div>
+        <div class="title" id="title-light">Light Intensity</div>
+        <div class="value" id="light">1200 lux</div>
+        <div class="details" id="lightDetails">Light is sufficient for growth ☀</div>
+    </div>
+
+    <div class="card" onclick="toggleDetails(this)">
+        <div class="emoji">💦</div>
+        <div class="title">Pump Status</div>
+        <div class="value" id="pump">OFF</div>
+        <div class="details" id="pumpDetails">Pump is off. Click to start watering 💧</div>
+    </div>
+</div>
+
+<script>
+let voiceEnabled = false;
+
+window.addEventListener('load', () => {
+    document.getElementById('startScreen').style.display = 'flex';
+    setTimeout(() => {
+        document.getElementById('startScreen').style.display = 'none';
+        document.getElementById('languageScreen').style.display = 'flex';
+    }, 4000);
+});
+
+function selectLanguage(lang) {
+    localStorage.setItem("language", lang);
+    document.getElementById('languageScreen').style.display = 'none';
+    document.getElementById('farmerInfo').style.display = 'flex';
+
+    const welcome = document.getElementById('farmerWelcome');
+    const instruction = document.getElementById('farmerInstruction');
+    const nameInput = document.getElementById('farmerName');
+    const locationInput = document.getElementById('farmLocation');
+    const submitBtn = document.querySelector('.submit-btn');
+
+    if (lang === 'Telugu') {
+        welcome.innerText = "ఫార్మర్ కి స్వాగతం! 🌾";
+        instruction.innerText = "మీ పేరు మరియు స్థానం చెప్పండి:";
+        nameInput.placeholder = "మీ పేరు";
+        locationInput.placeholder = "ఫారం యొక్క స్థానం";
+        submitBtn.innerText = "కొనసాగించండి";
+    } else if (lang === 'Hindi') {
+        welcome.innerText = "किसान का स्वागत है! 🌾";
+        instruction.innerText = "अपना नाम और स्थान बताएं:";
+        nameInput.placeholder = "आपका नाम";
+        locationInput.placeholder = "खेती का स्थान";
+        submitBtn.innerText = "जारी रखें";
+    } else {
+        welcome.innerText = "Welcome Farmer! 🌾";
+        instruction.innerText = "Press mic and speak your details:";
+        nameInput.placeholder = "Your Name";
+        locationInput.placeholder = "Farm Location";
+        submitBtn.innerText = "Continue";
+    }
+
+    voiceEnabled = true;
+    document.getElementById("enableVoiceBtn").style.display = "none";
+
+    const confirmMsg = lang === "Hindi" ? "वॉइस सक्षम किया गया।" :
+                       lang === "Telugu" ? "వాయిస్ ప్రారంభించబడింది." : "Voice enabled.";
+    speak(confirmMsg);
+}
+
+function speak(text) {
+    if (!voiceEnabled || !('speechSynthesis' in window)) return;
+    speechSynthesis.cancel();
+    const msg = new SpeechSynthesisUtterance(text);
+    const lang = localStorage.getItem("language");
+    msg.lang = lang === 'Telugu' ? "te-IN" : lang === 'Hindi' ? "hi-IN" : "en-US";
+    msg.rate = 0.95;
+    speechSynthesis.speak(msg);
+}
+
+function unlockAudio() {
+    voiceEnabled = true;
+    const lang = localStorage.getItem("language") || "English";
+    const confirmMsg = lang === "Hindi" ? "वॉइस सक्षम किया गया।" : lang === "Telugu" ? "వాయిస్ ప్రారంభించబడింది." : "Voice enabled.";
+    speak(confirmMsg);
+    document.getElementById("enableVoiceBtn").style.display = "none";
+}
+
+function simulateVoice(inputId) {
+    const micBtn = document.getElementById(inputId === 'farmerName' ? 'micName' : 'micLocation');
+    micBtn.classList.add('listening');
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        alert("Sorry, your browser does not support Speech Recognition.");
+        micBtn.classList.remove('listening');
+        return;
+    }
+
+    const recognition = new SpeechRecognition();
+    const lang = localStorage.getItem("language");
+    recognition.lang = lang === 'Telugu' ? 'te-IN' : lang === 'Hindi' ? 'hi-IN' : 'en-US';
+
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.start();
+
+    recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        document.getElementById(inputId).value = transcript;
+        micBtn.classList.remove('listening');
+        speak(transcript);
+    };
+
+    recognition.onerror = (event) => {
+        console.error("Speech recognition error:", event.error);
+        micBtn.classList.remove('listening');
+    };
+
+    recognition.onend = () => {
+        micBtn.classList.remove('listening');
+    };
+}
+
+function getSuggestion(paramKey, value, min, max) {
+    const lang = localStorage.getItem("language") || "English";
+    const labels = { moisture: { en: "Soil Moisture", hi: "मिट्टी की नमी", te: "మట్టి తేమ" }, temp: { en: "Temperature", hi: "तापमान", te: "ఉష్ణోగ్రత" }, ph: { en: "Soil pH", hi: "मिट्टी का pH", te: "మట్టి pH" }, light: { en: "Light Intensity", hi: "प्रकाश तीव्रता", te: "కాంతి తీవ్రత" } };
+    const label = lang === "Hindi" ? labels[paramKey].hi : lang === "Telugu" ? labels[paramKey].te : labels[paramKey].en;
+    if (lang === "Hindi") { if (value < min) return `${label} आदर्श सीमा से कम है।`; if (value > max) return `${label} आदर्श सीमा से अधिक है।`; return `${label} आदर्श सीमा में है।`; }
+    else if (lang === "Telugu") { if (value < min) return `${label} ఆదర్శ పరిధికి కంటే తక్కువగా ఉంది.`; if (value > max) return `${label} ఆదర్శ పరిధికి కంటే ఎక్కువగా ఉంది.`; return `${label} ఆదర్శ పరిధిలో ఉంది.`; }
+    else { if (value < min) return `${label} is below the ideal range.`; if (value > max) return `${label} is above the ideal range.`; return `${label} is in the ideal range.`; }
+}
+
+function submitFarmerInfo() {
+    const name = document.getElementById('farmerName').value;
+    const location = document.getElementById('farmLocation').value;
+    if (name === "" || location === "") {
+        const lang = localStorage.getItem("language");
+        if (lang === "Hindi") alert("कृपया नाम और खेत का स्थान प्रदान करें!"); 
+        else if (lang === "Telugu") alert("దయచేసి పేరు మరియు ఫారం యొక్క స్థానం ఇవ్వండి!"); 
+        else alert("Please provide both name and farm location!");
+        return;
+    }
+    localStorage.setItem("farmerName", name);
+    localStorage.setItem("farmLocation", location);
+    document.getElementById('farmerInfo').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'grid';
+    const lang = localStorage.getItem("language");
+    showDashboardLanguage(lang, name, location);
+}
+
+function showDashboardLanguage(lang, name, location) {
+    if (lang === 'Telugu') { alert(`${name} గారు, ${location} నుండి! మీ ఫారం డేటాను చూద్దాం 🌱`); speak(`${name} గారు, ${location} నుండి. మీ ఫారం వివరాలు ఇలా ఉన్నాయి.`); }
+    else if (lang === 'Hindi') { alert(`${name} जी, ${location} से! आइए अपने खेत का डेटा देखें 🌱`); speak(`${name} जी, ${location} से। आपके खेत के डेटा इस प्रकार हैं।`); }
+    else { alert(`Welcome ${name} from ${location}! Let's check your farm data 🌱`); speak(`Welcome ${name} from ${location}. Here is your farm data.`); }
+    updateTitles();
+}
+
+function toggleDetails(card) {
+    const details = card.querySelector('.details');
+    details.style.display = details.style.display === 'block' ? 'none' : 'block';
+    if (voiceEnabled && details.style.display === 'block') speak(details.innerText);
+}
+
+function updateTitles() {
+    const lang = localStorage.getItem("language");
+    if (lang === "Telugu") { document.getElementById('title-moisture').innerText = "మట్టి తేమ"; document.getElementById('title-temp').innerText = "ఉష్ణోగ్రత"; document.getElementById('title-ph').innerText = "మట్టి pH"; document.getElementById('title-light').innerText = "కాంతి తీవ్రత"; }
+    else if (lang === "Hindi") { document.getElementById('title-moisture').innerText = "मिट्टी की नमी"; document.getElementById('title-temp').innerText = "तापमान"; document.getElementById('title-ph').innerText = "मिट्टी का pH"; document.getElementById('title-light').innerText = "प्रकाश तीव्रता"; }
+    else { document.getElementById('title-moisture').innerText = "Soil Moisture"; document.getElementById('title-temp').innerText = "Temperature"; document.getElementById('title-ph').innerText = "Soil pH"; document.getElementById('title-light').innerText = "Light Intensity"; }
+}
+
+setInterval(() => {
+    updateTitles();
+    let moisture = Math.floor(Math.random() * 100);
+    let temp = Math.floor(Math.random() * 40);
+    let ph = parseFloat((5 + Math.random() * 3).toFixed(1));
+    let light = Math.floor(Math.random() * 80000);
+    document.getElementById('moisture').innerText = moisture + '%';
+    document.getElementById('temperature').innerText = temp + '°C';
+    document.getElementById('ph').innerText = ph;
+    document.getElementById('light').innerText = light + ' lux';
+    document.getElementById('moistureDetails').innerText = getSuggestion('moisture', moisture, 25, 40);
+    document.getElementById('tempDetails').innerText = getSuggestion('temp', temp, 18, 32);
+    document.getElementById('phDetails').innerText = getSuggestion('ph', ph, 6.0, 7.5);
+    document.getElementById('lightDetails').innerText = getSuggestion('light', light, 20000, 60000);
+}, 5000);
+
+function goBack(screenId) {
+    document.querySelectorAll('.screen').forEach(screen => screen.style.display = 'none');
+    document.getElementById(screenId).style.display = 'flex';
+}
+</script>
+</body>
+</html>
